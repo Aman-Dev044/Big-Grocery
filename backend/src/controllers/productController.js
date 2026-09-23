@@ -1,7 +1,12 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const UploadBatch = require('../models/UploadBatch');
+const { STORAGE_DIR } = require('../config/env');
+const { removeDir, safeUnlink } = require('../utils/fsx');
 
 const SORTABLE = new Set(['srNo', 'name', 'price', 'stock', 'createdAt', 'updatedAt']);
 
@@ -97,4 +102,90 @@ async function getStats(req, res, next) {
   }
 }
 
-module.exports = { listProducts, getProduct, getStats };
+/**
+ * Removes the image files belonging to the given products.
+ * `image.path` is stored relative to STORAGE_DIR; anything that tries to climb
+ * out of it is ignored rather than followed.
+ */
+function removeImageFiles(products) {
+  let removed = 0;
+
+  products.forEach((product) => {
+    (product.images || []).forEach((image) => {
+      if (!image.path) return;
+      const target = path.resolve(STORAGE_DIR, image.path);
+      if (!target.startsWith(path.resolve(STORAGE_DIR) + path.sep)) return;
+      if (!fs.existsSync(target)) return;
+      safeUnlink(target);
+      removed += 1;
+    });
+  });
+
+  return removed;
+}
+
+/** Deletes the products whose ids are posted in the body, plus their images. */
+async function deleteProducts(req, res, next) {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    const valid = ids.filter((id) => mongoose.isValidObjectId(id));
+
+    if (valid.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid product ids were provided' });
+    }
+
+    const products = await Product.find({ _id: { $in: valid } }, 'images').lean();
+    if (products.length === 0) {
+      return res.status(404).json({ success: false, message: 'No matching products found' });
+    }
+
+    const imagesRemoved = removeImageFiles(products);
+    const { deletedCount } = await Product.deleteMany({ _id: { $in: valid } });
+
+    return res.json({
+      success: true,
+      message: `${deletedCount} product${deletedCount === 1 ? '' : 's'} deleted`,
+      data: { deletedCount, imagesRemoved },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** Wipes the whole catalogue: every product, every extracted image, every batch. */
+async function deleteAllProducts(req, res, next) {
+  try {
+    const productCount = await Product.countDocuments();
+    if (productCount === 0) {
+      return res.json({
+        success: true,
+        message: 'The catalogue is already empty',
+        data: { deletedCount: 0, batchesRemoved: 0 },
+      });
+    }
+
+    const { deletedCount } = await Product.deleteMany({});
+
+    // Every batch folder under storage/ holds only extracted product images.
+    let batchesRemoved = 0;
+    if (fs.existsSync(STORAGE_DIR)) {
+      fs.readdirSync(STORAGE_DIR, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .forEach((entry) => {
+          removeDir(path.join(STORAGE_DIR, entry.name));
+          batchesRemoved += 1;
+        });
+    }
+    await UploadBatch.deleteMany({});
+
+    return res.json({
+      success: true,
+      message: `All ${deletedCount} products deleted`,
+      data: { deletedCount, batchesRemoved },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { listProducts, getProduct, getStats, deleteProducts, deleteAllProducts };

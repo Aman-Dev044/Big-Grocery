@@ -1,10 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { IconBell, IconChevronDown, IconLock, IconLogout, IconSearch, IconUser } from './Icons';
+import { IconBell, IconChevronDown, IconLogout, IconSearch, IconUser } from './Icons';
 
 function initials(name: string) {
   return name
@@ -22,7 +21,7 @@ const TITLES: Record<string, string> = {
 };
 
 export default function Topbar() {
-  const { admin, ready, signOut } = useAuth();
+  const { admin, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
 
@@ -64,9 +63,6 @@ export default function Topbar() {
         </span>
       </button>
 
-      {!ready ? (
-        <span className="h-10 w-[132px] shrink-0 animate-pulse rounded-xl bg-neutral-100" />
-      ) : admin ? (
         <div className="relative shrink-0" ref={menuRef}>
           <button
             type="button"
@@ -98,7 +94,7 @@ export default function Topbar() {
                 onClick={() => {
                   setMenuOpen(false);
                   signOut();
-                  router.replace('/products');
+                  router.replace('/login');
                 }}
                 className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13.5px] font-semibold text-rose-600 transition hover:bg-rose-50"
               >
@@ -108,15 +104,6 @@ export default function Topbar() {
             </div>
           )}
         </div>
-      ) : (
-        <Link
-          href="/login"
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-[#FFD500] px-4 py-2.5 text-[13.5px] font-bold text-neutral-900 transition hover:bg-[#f5cd00]"
-        >
-          <IconLock width={17} height={17} />
-          Admin Login
-        </Link>
-      )}
     </header>
   );
 }

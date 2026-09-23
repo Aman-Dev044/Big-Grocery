@@ -3,21 +3,22 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from './Logo';
+import TaglineStrip from './TaglineStrip';
 import { useAuth } from '@/lib/auth';
 import {
   IconChart, IconDashboard, IconDoc, IconBox, IconGrid, IconInventory,
-  IconCart, IconLock, IconLogout, IconSettings, IconStore, IconTag,
+  IconCart, IconLogout, IconSettings, IconStore, IconTag,
   IconTruck, IconUpload, IconUsers,
 } from './Icons';
 
-type Item = { label: string; icon: typeof IconBox; href?: string; requiresAuth?: boolean };
+type Item = { label: string; icon: typeof IconBox; href?: string };
 
-// The live destinations. Admin-only entries are hidden entirely until login —
-// a signed-out visitor sees only Products.
+// The three live destinations, in the order the store owner works through them.
+// The sidebar only ever renders for a signed-in admin.
 const PRIMARY: Item[] = [
-  { label: 'Dashboard', icon: IconDashboard, href: '/dashboard', requiresAuth: true },
+  { label: 'Dashboard', icon: IconDashboard, href: '/dashboard' },
   { label: 'Products', icon: IconBox, href: '/products' },
-  { label: 'Upload', icon: IconUpload, href: '/upload', requiresAuth: true },
+  { label: 'Upload', icon: IconUpload, href: '/upload' },
 ];
 
 // Shown for completeness, deliberately inert.
@@ -39,16 +40,18 @@ const ROW = 'flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14px]
 
 export default function Sidebar() {
   const pathname = usePathname() || '';
-  const { admin, signOut } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
-      <Logo />
+    <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
+      <div className="flex justify-center px-5 pb-4 pt-5">
+        <Logo width={152} priority />
+      </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
         <div className="space-y-0.5">
-          {PRIMARY.filter((item) => admin || !item.requiresAuth).map(({ label, icon: Icon, href }) => {
+          {PRIMARY.map(({ label, icon: Icon, href }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
@@ -87,28 +90,22 @@ export default function Sidebar() {
         </div>
       </nav>
 
+      <div className="mx-3 mb-3 rounded-2xl bg-[#FFF6DC] p-4">
+        <TaglineStrip variant="stack" />
+      </div>
+
       <div className="border-t border-neutral-200 p-3">
-        {admin ? (
-          <button
-            type="button"
-            onClick={() => {
-              signOut();
-              router.replace('/products');
-            }}
-            className={`${ROW} text-rose-600 hover:bg-rose-50`}
-          >
-            <IconLogout className="shrink-0" />
-            Logout
-          </button>
-        ) : (
-          <Link
-            href="/login"
-            className={`${ROW} justify-center bg-[#FFD500] font-bold text-neutral-900 hover:bg-[#f5cd00]`}
-          >
-            <IconLock width={17} height={17} className="shrink-0" />
-            Admin Login
-          </Link>
-        )}
+        <button
+          type="button"
+          onClick={() => {
+            signOut();
+            router.replace('/login');
+          }}
+          className={`${ROW} text-rose-600 hover:bg-rose-50`}
+        >
+          <IconLogout className="shrink-0" />
+          Logout
+        </button>
       </div>
     </aside>
   );

@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Logo from '@/components/Logo';
+import { TAGLINES } from '@/components/TaglineStrip';
 import { IconEye, IconEyeOff, IconLock, IconMail } from '@/components/Icons';
 import { useAuth } from '@/lib/auth';
 
@@ -38,46 +38,62 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#FFD500] p-10 lg:flex">
-        <div className="scale-110 origin-top-left">
-          <Logo />
-        </div>
+      <div className="relative hidden items-center justify-center overflow-hidden bg-[#FFD500] px-10 py-12 lg:flex">
+        {/* Soft decorative wash — purely ornamental */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-32 -top-40 h-[520px] w-[520px] rounded-full bg-white/20 blur-[2px]"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-44 -left-32 h-[460px] w-[460px] rounded-full bg-white/12"
+        />
 
-        <div className="relative z-10 max-w-[420px]">
-          <h2 className="text-[34px] font-extrabold leading-[1.15] tracking-tight text-neutral-900">
+        <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center text-center">
+          <div className="w-full rounded-[28px] bg-white px-8 py-7 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.45)]">
+            <Logo width={300} priority />
+          </div>
+
+          <h2 className="mt-9 text-[30px] font-extrabold leading-[1.18] tracking-tight text-neutral-900">
             Good Food,
             <br />
             Happier Families,
             <br />
             Always.
           </h2>
-          <p className="mt-4 text-[15px] leading-relaxed text-neutral-800/75">
-            Import your whole catalogue in one go — one Excel sheet, one ZIP of photos. Products and
-            images are matched automatically by serial number.
+
+          <p className="mt-3.5 max-w-[360px] text-[14.5px] leading-relaxed text-neutral-900/65">
+            One Excel sheet, one ZIP of photos — products and images matched automatically by
+            serial number.
           </p>
-          <span className="mt-6 block h-1 w-16 rounded bg-neutral-900/25" />
+
+          <span aria-hidden className="mt-7 block h-[3px] w-14 rounded-full bg-neutral-900/20" />
+
+          {/* Pills, not pipe separators — a wrapped row never dangles a divider. */}
+          <ul className="mt-7 flex flex-wrap justify-center gap-2">
+            {TAGLINES.map((line) => (
+              <li
+                key={line}
+                className="rounded-full bg-white/55 px-3.5 py-1.5 text-[12px] font-semibold text-neutral-900/75"
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-8 text-[13px] font-semibold tracking-wide text-neutral-900/45">
+            Har Ghar Ki Pasand
+          </p>
         </div>
-
-        <p className="relative z-10 text-[13px] font-semibold text-neutral-800/60">
-          Har Ghar Ki Pasand
-        </p>
-
-        {/* Soft decorative wash — purely ornamental */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full bg-white/25"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-20 h-[360px] w-[360px] rounded-full bg-white/15"
-        />
       </div>
 
       {/* Form panel */}
       <div className="flex items-center justify-center bg-[#f6f7f9] px-5 py-12">
         <div className="w-full max-w-[400px]">
-          <div className="mb-6 lg:hidden">
-            <Logo />
+          <div className="mb-7 flex justify-center lg:hidden">
+            <span className="w-[260px]">
+              <Logo width={260} priority />
+            </span>
           </div>
 
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFD500]">
@@ -160,13 +176,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-[13px] text-neutral-500">
-            <Link href="/products" className="font-semibold text-neutral-700 hover:underline">
-              Back to products
-            </Link>
-          </p>
-
-          <p className="mt-2 text-center text-[12px] text-neutral-400">
+          <p className="mt-6 text-center text-[12px] text-neutral-400">
             Big Bannia Di Hatti — Store Admin
           </p>
         </div>

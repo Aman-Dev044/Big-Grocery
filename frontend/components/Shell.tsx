@@ -3,55 +3,50 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import Sidebar from './Sidebar';
+import TaglineStrip from './TaglineStrip';
 import Topbar from './Topbar';
 import { useAuth } from '@/lib/auth';
 
-/** Only these need an admin. Everything else is browsable signed out. */
-const PROTECTED_ROUTES = ['/dashboard', '/upload'];
+/** This is an admin panel — everything but the login page needs a signed-in admin. */
+const PUBLIC_ROUTES = ['/login'];
 
-const isProtected = (pathname: string) =>
-  PROTECTED_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
-
-/**
- * Wraps every page: renders the login route bare, gives everything else the
- * sidebar + top bar, and sends signed-out visitors to /login only when they
- * actually open an admin-only page.
- */
 export default function Shell({ children }: { children: ReactNode }) {
   const { admin, ready } = useAuth();
   const pathname = usePathname() || '';
   const router = useRouter();
 
-  const needsAdmin = isProtected(pathname);
+  const isPublic = PUBLIC_ROUTES.includes(pathname);
 
   useEffect(() => {
-    if (ready && !admin && needsAdmin) router.replace('/login');
-  }, [ready, admin, needsAdmin, router]);
+    if (ready && !admin && !isPublic) router.replace('/login');
+  }, [ready, admin, isPublic, router]);
 
-  // The login page owns the full viewport — no chrome around it.
-  if (pathname === '/login') return <>{children}</>;
+  // The login page owns the full viewport — no sidebar, no top bar.
+  if (isPublic) return <>{children}</>;
 
-  const blocked = needsAdmin && (!ready || !admin);
+  // Session still resolving, or already on the way to /login.
+  if (!ready || !admin) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#f6f7f9]">
+        <div className="flex flex-col items-center gap-3">
+          <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-neutral-300 border-t-[#FFD500]" />
+          <p className="text-[13px] text-neutral-500">
+            {ready ? 'Redirecting to login...' : 'Checking your session...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 px-6 py-6">
-          {blocked ? (
-            <div className="grid min-h-[60vh] place-items-center">
-              <div className="flex flex-col items-center gap-3">
-                <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-neutral-300 border-t-[#FFD500]" />
-                <p className="text-[13px] text-neutral-500">
-                  {ready ? 'Redirecting to login...' : 'Checking your session...'}
-                </p>
-              </div>
-            </div>
-          ) : (
-            children
-          )}
-        </main>
+        <main className="flex-1 px-6 py-6">{children}</main>
+        <footer className="px-6 pb-6">
+          <TaglineStrip />
+        </footer>
       </div>
     </div>
   );

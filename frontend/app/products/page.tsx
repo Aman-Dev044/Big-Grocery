@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import ProductTable from '@/components/ProductTable';
-import { useAuth } from '@/lib/auth';
 import StatCards from '@/components/StatCards';
 import {
   IconChevronLeft,
@@ -22,7 +22,7 @@ import {
   IconTrash,
   IconUpload,
 } from '@/components/Icons';
-import { fetchProducts, fetchStats } from '@/lib/api';
+import { deleteAllProducts, deleteProducts, fetchProducts, fetchStats } from '@/lib/api';
 import type { Pagination, Product, Stats } from '@/lib/types';
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -54,7 +54,6 @@ const DEAD_SELECT =
 
 function ProductsPageInner() {
   const searchParams = useSearchParams();
-  const { admin } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -70,6 +69,12 @@ function ProductsPageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  type Pending = { kind: 'selected' | 'all' } | null;
+  const [pending, setPending] = useState<Pending>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [notice, setNotice] = useState('');
 
   // Debounce the search box so typing does not fire a request per keystroke.
   useEffect(() => {
@@ -122,6 +127,28 @@ function ProductsPageInner() {
       prev.size === products.length ? new Set() : new Set(products.map((p) => p._id))
     );
 
+  async function runDelete() {
+    if (!pending) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res =
+        pending.kind === 'all'
+          ? await deleteAllProducts()
+          : await deleteProducts([...selected]);
+
+      setPending(null);
+      setNotice(res.message);
+      setSelected(new Set());
+      setPage(1);
+      await load();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const total = pagination?.total ?? 0;
   const totalPages = pagination?.totalPages ?? 1;
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -141,13 +168,24 @@ function ProductsPageInner() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href={admin ? '/upload' : '/login'}
-            title={admin ? undefined : 'Admin login required'}
+            href="/upload"
             className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[13.5px] font-semibold text-neutral-700 transition hover:border-[#FFC107] hover:bg-[#FFFCF0]"
           >
             <IconUpload width={17} height={17} />
             Import
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError('');
+              setPending({ kind: 'all' });
+            }}
+            disabled={total === 0}
+            className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-[13.5px] font-semibold text-rose-600 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <IconTrash width={17} height={17} />
+            Delete All Products
+          </button>
           <span className={DEAD_BUTTON} title="Not available in this demo">
             <IconDownload width={17} height={17} />
             Export
@@ -222,6 +260,20 @@ function ProductsPageInner() {
         </span>
       </div>
 
+      {notice && (
+        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3">
+          <p className="flex-1 text-[13.5px] font-medium text-emerald-800">{notice}</p>
+          <button
+            type="button"
+            onClick={() => setNotice('')}
+            className="rounded-lg px-2 py-0.5 text-lg leading-none text-emerald-700 hover:bg-emerald-100"
+            aria-label="Dismiss"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Table card */}
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
         <div className="flex flex-wrap items-center gap-2.5 border-b border-neutral-200 px-4 py-3">
@@ -243,13 +295,18 @@ function ProductsPageInner() {
               {label}
             </span>
           ))}
-          <span
-            title="Not available in this demo"
-            className="flex cursor-not-allowed items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-rose-300"
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError('');
+              setPending({ kind: 'selected' });
+            }}
+            disabled={selected.size === 0}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300 disabled:hover:bg-transparent"
           >
             <IconTrash width={16} height={16} />
             Delete
-          </span>
+          </button>
 
           <span className="ml-auto flex items-center gap-1">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-neutral-100 text-neutral-700">
@@ -352,6 +409,32 @@ function ProductsPageInner() {
         </div>
       </div>
 
+      <ConfirmDialog
+        open={pending !== null}
+        busy={deleting}
+        error={deleteError}
+        title={pending?.kind === 'all' ? 'Delete every product?' : `Delete ${selected.size} product${selected.size === 1 ? '' : 's'}?`}
+        confirmLabel={pending?.kind === 'all' ? 'Delete all' : `Delete ${selected.size}`}
+        requireTyped={pending?.kind === 'all' ? 'DELETE' : undefined}
+        onCancel={() => {
+          setPending(null);
+          setDeleteError('');
+        }}
+        onConfirm={runDelete}
+        message={
+          pending?.kind === 'all' ? (
+            <>
+              This removes all <span className="font-semibold text-neutral-900">{total}</span>{' '}
+              products, every extracted image on disk, and the import history. It cannot be undone —
+              you would need to run the import again.
+            </>
+          ) : (
+            <>
+              The selected products and their images will be removed. This cannot be undone.
+            </>
+          )
+        }
+      />
     </div>
   );
 }

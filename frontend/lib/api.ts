@@ -104,6 +104,26 @@ export async function uploadBulk(excel: File, zip: File, replaceExisting = true)
   );
 }
 
+export async function deleteProducts(ids: string[]) {
+  return request<{ success: true; message: string; data: { deletedCount: number; imagesRemoved: number } }>(
+    '/products',
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    },
+    true
+  );
+}
+
+export async function deleteAllProducts() {
+  return request<{ success: true; message: string; data: { deletedCount: number; batchesRemoved: number } }>(
+    '/products/all',
+    { method: 'DELETE' },
+    true
+  );
+}
+
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
