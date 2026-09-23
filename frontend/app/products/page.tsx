@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import ProductTable from '@/components/ProductTable';
-import { useLoginPrompt } from '@/components/Shell';
 import { useAuth } from '@/lib/auth';
 import StatCards from '@/components/StatCards';
 import {
@@ -52,9 +52,9 @@ const DEAD_BUTTON =
 const DEAD_SELECT =
   'flex cursor-not-allowed items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[13.5px] text-neutral-400';
 
-export default function ProductsPage() {
+function ProductsPageInner() {
+  const searchParams = useSearchParams();
   const { admin } = useAuth();
-  const openLogin = useLoginPrompt();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -65,7 +65,7 @@ export default function ProductsPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(searchParams.get('status') || '');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -140,25 +140,14 @@ export default function ProductsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {admin ? (
-            <Link
-              href="/upload"
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[13.5px] font-semibold text-neutral-700 transition hover:border-[#FFC107] hover:bg-[#FFFCF0]"
-            >
-              <IconUpload width={17} height={17} />
-              Import
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={openLogin}
-              title="Admin login required"
-              className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[13.5px] font-semibold text-neutral-700 transition hover:border-[#FFC107] hover:bg-[#FFFCF0]"
-            >
-              <IconUpload width={17} height={17} />
-              Import
-            </button>
-          )}
+          <Link
+            href={admin ? '/upload' : '/login'}
+            title={admin ? undefined : 'Admin login required'}
+            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-[13.5px] font-semibold text-neutral-700 transition hover:border-[#FFC107] hover:bg-[#FFFCF0]"
+          >
+            <IconUpload width={17} height={17} />
+            Import
+          </Link>
           <span className={DEAD_BUTTON} title="Not available in this demo">
             <IconDownload width={17} height={17} />
             Export
@@ -364,5 +353,13 @@ export default function ProductsPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="h-96 animate-pulse rounded-2xl bg-neutral-200" />}>
+      <ProductsPageInner />
+    </Suspense>
   );
 }

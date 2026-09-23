@@ -9,12 +9,10 @@ import {
   IconCheck,
   IconFileSheet,
   IconFileZip,
-  IconLock,
   IconRefresh,
   IconWarn,
 } from '@/components/Icons';
 import { ApiError, uploadBulk } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import type { UploadResult } from '@/lib/types';
 
 type Step = 'select' | 'processing' | 'done';
@@ -88,7 +86,6 @@ function SummaryTile({
 }
 
 export default function UploadPage() {
-  const { admin, ready } = useAuth();
   const router = useRouter();
 
   const [excel, setExcel] = useState<File | null>(null);
@@ -97,25 +94,6 @@ export default function UploadPage() {
   const [step, setStep] = useState<Step>('select');
   const [error, setError] = useState('');
   const [result, setResult] = useState<UploadResult | null>(null);
-
-  if (!ready) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-neutral-200" />;
-  }
-
-  if (!admin) {
-    return (
-      <div className="mx-auto max-w-[460px] rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#FFF3C4]">
-          <IconLock className="text-[#B45309]" width={26} height={26} />
-        </span>
-        <h1 className="mt-4 text-[19px] font-bold text-neutral-900">Admin login required</h1>
-        <p className="mt-1.5 text-[13.5px] text-neutral-500">
-          Use the <span className="font-semibold text-neutral-700">Admin Login</span> button in the
-          top bar to sign in, then come back here to import products.
-        </p>
-      </div>
-    );
-  }
 
   async function proceed() {
     if (!excel || !zip) return;

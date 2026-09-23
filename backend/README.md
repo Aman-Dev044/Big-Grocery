@@ -37,13 +37,19 @@ npm run dev             # or: npm start
 | `MAX_UPLOAD_MB` | Per-file upload cap |
 | `CORS_ORIGIN` | Frontend origin(s), comma separated, or `*` |
 | `DNS_SERVERS` | Optional. Set only if `mongodb+srv://` fails with `querySrv ECONNREFUSED` — Node's resolver is then pointed at a dead local stub. |
+| `JWT_SECRET` | Signing key for admin tokens |
+| `JWT_EXPIRES_IN` | Token lifetime (default `12h`) |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` / `SEED_ADMIN_NAME` | The admin created on first boot (`npm run seed` re-runs it; existing accounts are left alone) |
 
 ## API
 
 | Method | Route | Notes |
 |---|---|---|
 | `GET` | `/api/health` | Liveness |
-| `POST` | `/api/upload/bulk` | `multipart/form-data`: `excel`, `zip`, `replaceExisting` (default `true`) |
+| `POST` | `/api/auth/login` | `{ email, password }` -> JWT |
+| `GET` | `/api/auth/me` | Bearer — the signed-in admin |
+| `GET` | `/api/dashboard` | Bearer — aggregated catalogue metrics for the dashboard |
+| `POST` | `/api/upload/bulk` | Bearer — `multipart/form-data`: `excel`, `zip`, `replaceExisting` (default `true`) |
 | `GET` | `/api/upload/batches` | Last 20 import runs + their warnings |
 | `GET` | `/api/products` | `page, limit, search, category, brand, status, sortBy, order` |
 | `GET` | `/api/products/stats` | Counts + distinct categories/brands |

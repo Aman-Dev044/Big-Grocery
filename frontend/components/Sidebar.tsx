@@ -1,29 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Logo from './Logo';
 import { useAuth } from '@/lib/auth';
 import {
   IconChart, IconDashboard, IconDoc, IconBox, IconGrid, IconInventory,
-  IconCart, IconLock, IconSettings, IconStore, IconTag, IconTruck,
-  IconUpload, IconUsers,
+  IconCart, IconLock, IconLogout, IconSettings, IconStore, IconTag,
+  IconTruck, IconUpload, IconUsers,
 } from './Icons';
 
-type Item = {
-  label: string;
-  icon: typeof IconBox;
-  href?: string;
-  /** Renders with a lock and opens the login dialog until an admin is signed in. */
-  requiresAuth?: boolean;
-};
+type Item = { label: string; icon: typeof IconBox; href?: string; requiresAuth?: boolean };
 
-// Only "Products" and "Upload" navigate — every other entry is intentionally
-// inert, matching the reference design.
-const MENU: Item[] = [
-  { label: 'Dashboard', icon: IconDashboard },
+// The live destinations. Admin-only entries are hidden entirely until login —
+// a signed-out visitor sees only Products.
+const PRIMARY: Item[] = [
+  { label: 'Dashboard', icon: IconDashboard, href: '/dashboard', requiresAuth: true },
   { label: 'Products', icon: IconBox, href: '/products' },
   { label: 'Upload', icon: IconUpload, href: '/upload', requiresAuth: true },
+];
+
+// Shown for completeness, deliberately inert.
+const SECONDARY: Item[] = [
   { label: 'Categories', icon: IconGrid },
   { label: 'Inventory', icon: IconInventory },
   { label: 'Purchase Orders', icon: IconDoc },
@@ -39,76 +37,78 @@ const MENU: Item[] = [
 
 const ROW = 'flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14px] font-medium transition';
 
-export default function Sidebar({ onRequestLogin }: { onRequestLogin: () => void }) {
-  const { admin } = useAuth();
+export default function Sidebar() {
   const pathname = usePathname() || '';
+  const { admin, signOut } = useAuth();
+  const router = useRouter();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
       <Logo />
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
-        {MENU.map(({ label, icon: Icon, href, requiresAuth }) => {
-          // Inert entry.
-          if (!href) {
+      <nav className="flex-1 overflow-y-auto px-3 pb-2">
+        <div className="space-y-0.5">
+          {PRIMARY.filter((item) => admin || !item.requiresAuth).map(({ label, icon: Icon, href }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
-              <span
+              <Link
                 key={label}
-                aria-disabled="true"
-                title="Not available in this demo"
-                className={`${ROW} cursor-not-allowed select-none text-neutral-400`}
+                href={href as string}
+                aria-current={active ? 'page' : undefined}
+                className={`${ROW} ${
+                  active
+                    ? 'bg-[#FFD84A] text-neutral-900 shadow-sm hover:bg-[#ffd22e]'
+                    : 'text-neutral-700 hover:bg-neutral-50'
+                }`}
               >
                 <Icon className="shrink-0" />
                 {label}
-              </span>
+              </Link>
             );
-          }
+          })}
+        </div>
 
-          // Locked until login — clicking opens the login dialog.
-          if (requiresAuth && !admin) {
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={onRequestLogin}
-                title="Admin login required"
-                className={`${ROW} text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800`}
-              >
-                <Icon className="shrink-0" />
-                {label}
-                <IconLock width={15} height={15} className="ml-auto text-neutral-400" />
-              </button>
-            );
-          }
+        <p className="px-3.5 pb-1.5 pt-5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+          More
+        </p>
 
-          const active = pathname === href || pathname.startsWith(`${href}/`);
-
-          return (
-            <Link
+        <div className="space-y-0.5">
+          {SECONDARY.map(({ label, icon: Icon }) => (
+            <span
               key={label}
-              href={href}
-              className={`${ROW} ${
-                active
-                  ? 'bg-[#FFD84A] text-neutral-900 shadow-sm hover:bg-[#ffd22e]'
-                  : 'text-neutral-700 hover:bg-neutral-50'
-              }`}
+              aria-disabled="true"
+              title="Not available in this demo"
+              className={`${ROW} cursor-not-allowed select-none text-neutral-400`}
             >
               <Icon className="shrink-0" />
               {label}
-            </Link>
-          );
-        })}
+            </span>
+          ))}
+        </div>
       </nav>
 
-      <div className="m-3 overflow-hidden rounded-2xl bg-[#FFF6DC] p-4">
-        <p className="text-[15px] font-semibold leading-snug text-neutral-800">
-          Good Food
-          <br />
-          Happier Families
-          <br />
-          Always
-        </p>
-        <span className="mt-2 block h-[3px] w-10 rounded bg-[#FFC107]" />
+      <div className="border-t border-neutral-200 p-3">
+        {admin ? (
+          <button
+            type="button"
+            onClick={() => {
+              signOut();
+              router.replace('/products');
+            }}
+            className={`${ROW} text-rose-600 hover:bg-rose-50`}
+          >
+            <IconLogout className="shrink-0" />
+            Logout
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className={`${ROW} justify-center bg-[#FFD500] font-bold text-neutral-900 hover:bg-[#f5cd00]`}
+          >
+            <IconLock width={17} height={17} className="shrink-0" />
+            Admin Login
+          </Link>
+        )}
       </div>
     </aside>
   );
