@@ -1,4 +1,4 @@
-import type { Admin, Dashboard, Pagination, Product, Stats, UploadResult } from './types';
+import type { Admin, Pagination, Product, Stats, UploadResult } from './types';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1004/api';
 export const TOKEN_KEY = 'bbdh.admin.token';
@@ -82,10 +82,6 @@ export async function fetchProducts(query: ProductQuery = {}) {
 
 export async function fetchProduct(id: string) {
   return request<{ success: true; data: Product }>(`/products/${encodeURIComponent(id)}`);
-}
-
-export async function fetchDashboard() {
-  return request<{ success: true; data: Dashboard }>('/dashboard', {}, true);
 }
 
 export async function fetchStats() {

@@ -6,17 +6,16 @@ import Logo from './Logo';
 import TaglineStrip from './TaglineStrip';
 import { useAuth } from '@/lib/auth';
 import {
-  IconChart, IconDashboard, IconDoc, IconBox, IconGrid, IconInventory,
+  IconChart, IconDoc, IconBox, IconGrid, IconInventory,
   IconCart, IconLogout, IconSettings, IconStore, IconTag,
   IconTruck, IconUpload, IconUsers,
 } from './Icons';
 
 type Item = { label: string; icon: typeof IconBox; href?: string };
 
-// The three live destinations, in the order the store owner works through them.
+// The live destinations, in the order the store owner works through them.
 // The sidebar only ever renders for a signed-in admin.
 const PRIMARY: Item[] = [
-  { label: 'Dashboard', icon: IconDashboard, href: '/dashboard' },
   { label: 'Products', icon: IconBox, href: '/products' },
   { label: 'Upload', icon: IconUpload, href: '/upload' },
 ];
@@ -46,7 +45,7 @@ export default function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
       <div className="flex justify-center px-5 pb-4 pt-5">
-        <Logo width={152} priority />
+        <Logo width={132} priority />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-2">

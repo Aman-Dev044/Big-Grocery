@@ -9,7 +9,7 @@ interface Props {
 
 const RATIO = 581 / 774;
 
-export default function Logo({ width = 200, className = '', priority = false }: Props) {
+export default function Logo({ width = 160, className = '', priority = false }: Props) {
   return (
     <Image
       src="/logo.png"
@@ -17,9 +17,11 @@ export default function Logo({ width = 200, className = '', priority = false }: 
       width={width}
       height={Math.round(width * RATIO)}
       priority={priority}
-      // Served at ~2x so the artwork stays crisp on retina screens.
       quality={95}
-      className={`h-auto w-full max-w-full select-none ${className}`}
+      // `block` is required for `mx-auto` to centre it — next/image renders an
+      // inline <img>, on which auto margins do nothing. And no `w-full`: that
+      // would override `width` and stretch the logo to fill its container.
+      className={`mx-auto block h-auto max-w-full select-none ${className}`}
     />
   );
 }

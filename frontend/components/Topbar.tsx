@@ -15,7 +15,6 @@ function initials(name: string) {
 }
 
 const TITLES: Record<string, string> = {
-  '/dashboard': 'Dashboard',
   '/products': 'Products',
   '/upload': 'Bulk Upload',
 };

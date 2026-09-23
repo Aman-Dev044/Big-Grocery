@@ -48,12 +48,13 @@ npm run dev             # or: npm start
 | `GET` | `/api/health` | Liveness |
 | `POST` | `/api/auth/login` | `{ email, password }` -> JWT |
 | `GET` | `/api/auth/me` | Bearer — the signed-in admin |
-| `GET` | `/api/dashboard` | Bearer — aggregated catalogue metrics for the dashboard |
 | `POST` | `/api/upload/bulk` | Bearer — `multipart/form-data`: `excel`, `zip`, `replaceExisting` (default `true`) |
 | `GET` | `/api/upload/batches` | Last 20 import runs + their warnings |
 | `GET` | `/api/products` | `page, limit, search, category, brand, status, sortBy, order` |
 | `GET` | `/api/products/stats` | Counts + distinct categories/brands |
 | `GET` | `/api/products/:id` | Accepts Mongo `_id`, `sku`, or `srNo` |
+| `DELETE` | `/api/products` | Bearer — body `{ ids: [...] }`, deletes those products and their images |
+| `DELETE` | `/api/products/all` | Bearer — wipes every product, image and batch |
 | `GET` | `/static/<batchId>/<srNo>/<file>` | Extracted product image |
 
 ### Example
